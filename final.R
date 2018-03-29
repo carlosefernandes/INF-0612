@@ -20,6 +20,8 @@ cepagri2$Mes <- format(strptime(as.character(cepagri2$Horario), "%d/%m/%Y-%H:%M"
 library(ggplot2)
 
 medias_historicas <- c(24.7, 24.9, 24.7, 23.05, 20, 18.8, 18.5, 20.5, 21.8, 23.3, 23.8, 24.3)
+
+#  Cria dataframe e gráfico de temperaturas médias por mês durante os 3 anos.
 cepagri2$Ano <- format(strptime(as.character(cepagri2$Horario), "%d/%m/%Y-%H:%M"), "%Y")
 cepagri2$Mes <- format(strptime(as.character(cepagri2$Horario), "%d/%m/%Y-%H:%M"), "%m")
 teste <- aggregate(cepagri2[ , 2:5], list(cepagri2$Ano, cepagri2$Mes), mean)
