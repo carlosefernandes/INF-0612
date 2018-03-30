@@ -1,19 +1,48 @@
 ########################################
-# Teste 4 - INF-0612          
-# Nome(s): 
+# Trabalho Final- INF-0612          
+# Nome(s): Carlos Eduardo Fenandes
+#          Marina Tachibana            
 ########################################
 
+consecutive <- function(vector , k = 1) {
+  n <- length(vector)
+  result <- logical(n)
+
+  for (i in (1+k):n)
+    if (all(vector[(i-k):(i-1)] == vector[i]))
+      result[i] <- TRUE
+  return(result)
+}
+
+consecutive_horarios <- function (my_vector, k = 1){
+  n <- length(my_vector)
+  result <- c(rep(FALSE, n))
+    for (i in 1:n-1) {
+    result[i] <- difftime(my_vector[i+1],my_vector[i],units="mins") == 10
+  }
+  return(result)
+}
 
 names <- c("Horario", "Temperatura", "Vento", "Umidade", "Sensacao")
 con <- url("https://www.ic.unicamp.br/~zanoni/cepagri/cepagri.csv")      
 cepagri <- read.csv(con, header = FALSE, sep = ";", col.names = names)
+
+# Remove linhas faltando dados
 cepagri <- cepagri[!is.na(cepagri[ , 5]), ]
 
+# Cria nova coluna Horario2 com horário formatado como data
 cepagri$Horario2 <- as.POSIXct(as.character(cepagri$Horario), format="%d/%m/%Y-%H:%M")
+
+# Cria data frame com dados filtrados de 01/01/2014 a 31/12/2017
 cepagri2 <- cepagri[cepagri$Horario2 >= "2015/01/01" & cepagri$Horario2 < "2018/01/01",]
 
+# Força colunas Temperatura, Vento, Umidade e Sensação a serem numericas
 cepagri2$Temperatura <- as.numeric(as.character(cepagri2$Temperatura))
+cepagri2$Vento <- as.numeric(as.character(cepagri2$Vento))
+cepagri2$Umidade <- as.numeric(as.character(cepagri2$Umidade))
+cepagri2$Sensacao <- as.numeric(as.character(cepagri2$Sensacao))
 
+# Cria novas colunas Ano e Mês
 cepagri2$Ano <- format(strptime(as.character(cepagri2$Horario), "%d/%m/%Y-%H:%M"), "%Y")
 cepagri2$Mes <- format(strptime(as.character(cepagri2$Horario), "%d/%m/%Y-%H:%M"), "%m")
 
@@ -54,6 +83,60 @@ g <- g + ylab("Temperatura") + labs(colour = "Anos",
                                     title = "Comparação Temperaturas Médias Mensais com Médias Históricas")
 g
 
+################################################################################################
+### Análise Micro-Explosão em 05/06/2016
+### http://g1.globo.com/sp/campinas-regiao/noticia/2016/06/entenda-o-que-e-microexplosao-que-atingiu-campinas-veja-trajetoria-dela.html
+### Vento Máximo em Campinas
+### http://g1.globo.com/sp/campinas-regiao/noticia/2015/12/temporal-tem-ventos-de-ate-143-kmh-na-regiao-de-campinas-diz-cepagri.html
+### Segundo vento máximo em Campinas
+### http://g1.globo.com/sp/campinas-regiao/noticia/2015/09/temporal-tem-ventos-ate-1425-kmh-na-regiao-de-campinas-diz-cepagri.html
+################################################################################################
+
+# Dataframe de Junho/2016
+vento_junho_2016 <- cepagri2[cepagri2$Horario2 > "2016-06-01" & cepagri2$Horario2 < "2016-07-01",]
+
+# Ordena o vento de Campinas em ordem decrescente
+vento_ordenado_periodo <- sort(cepagri2$Vento, decreasing = TRUE)
+
+# Vento Máximo em Junho de 2016 (88.6)
+vento_maximo_junho_2016 <- max(vento_junho_2016$Vento)
+
+# Horário do Vento Máximo em Campinas (05/06/2016-00:50)
+horario_vento_maximo_junho_2016 <- vento_junho_2016$Horario2[vento_junho_2016$Vento == vento_maximo]
+
+# Vento Máximo nos anos de 2015, 2016 e 2017 (143.6)
+vento_maximo_periodo <- max(cepagri2$Vento)
+
+# Horário do Vento Máximo em Campinas (2015-12-12 14:50:00)
+horario_vento_maximo_periodo <- cepagri2$Horario2[cepagri2$Vento == vento_maximo_periodo]
+
+# Segundo Vento Máximo nos anos de 2015, 2016 e 2017 (142.5)
+segundo_vento_maximo_periodo <- vento_ordenado_periodo[2]
+
+# Horário do Segundo Vento Máximo em Campinas (2015-09-28 00:50:00)
+horario_segundo_vento_maximo_periodo <- cepagri2$Horario2[cepagri2$Vento == segundo_vento_maximo_periodo]
+
+#Grafico de linha com os valores de vento nos anos de 2015-2017
+g_vento <- ggplot(cepagri2) + geom_line(aes(x = cepagri2$Horario2, y = cepagri2$Vento ))
+g_vento <- g_vento + ylab("Vento (Km/H") + 
+                     xlab("Horários") +
+                     labs(title = "Vento em Campinas nos anos 2015-2017")
+g_vento
+
+# Qual a ordem do vento da micro-explosão em relação ao vento do período 2015-2017 (106)
+match(vento_maximo_junho_2016, vento_ordenado_periodo)
+
+# Análise de vento = 0
+vento_zero <- cepagri2$Vento == 0
+horarios_vento_zero = cepagri2$Horario2[vento_zero]
+sum(vento_zero)
+# Verifica se existe medições seguidas com vento 0
+sum(consecutive_horarios(horarios_vento_zero))
+
+## Análise:
+## 1 - 2 outliers são dados válidos
+## 2 - Apesar do estrago, o vento da micro-explosão foi apenas 106o mais forte do período
+## 3 - 202 medições com Vento = 0, completar análise para ver se é problema nos dados
 
 
 
