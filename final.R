@@ -17,8 +17,8 @@ consecutive <- function(vector , k = 1) {
 consecutive_horarios <- function (my_vector, k = 1){
   n <- length(my_vector)
   result <- c(rep(FALSE, n))
-    for (i in 1:n-1) {
-    result[i] <- difftime(my_vector[i+1],my_vector[i],units="mins") == 10
+    for (i in 2:n) {
+    result[i] <- difftime(my_vector[i],my_vector[i-1],units="mins") == 10
   }
   return(result)
 }
@@ -128,15 +128,46 @@ match(vento_maximo_junho_2016, vento_ordenado_periodo)
 
 # Análise de vento = 0
 vento_zero <- cepagri2$Vento == 0
-horarios_vento_zero = cepagri2$Horario2[vento_zero]
+horarios_vento_zero <- cepagri2$Horario2[vento_zero]
 sum(vento_zero)
 # Verifica se existe medições seguidas com vento 0
 sum(consecutive_horarios(horarios_vento_zero))
 
+# Sequencia de zero: 26/08/2015
+## Vento e  umidade diminuíram, temperatura aumentou.
+## Vento e  umidade aumentaram, temperatura caiu
+seq_zero1 <- cepagri2[cepagri2$Horario2 >= "2015-08-26" & cepagri2$Horario2 < "2015-08-27",]
+g_seq_zero1 <- ggplot(seq_zero1, aes(x = seq_zero1$Horario2, y = value))
+g_seq_zero1 <- g_seq_zero1 + geom_line(aes(y = seq_zero1$Temperatura, colour="Temperatura"))
+g_seq_zero1 <- g_seq_zero1 + geom_line(aes(y = seq_zero1$Vento, colour="Vento"))
+g_seq_zero1 <- g_seq_zero1 + geom_line(aes(y = seq_zero1$Umidade, colour="Umidade"))
+g_seq_zero1 <- g_seq_zero1 + geom_line(aes(y = seq_zero1$Sensacao, colour="Sensação"))
+g_seq_zero1 <- g_seq_zero1 + xlab("Horário") + ylab("") +
+                             labs(title = "Variação Vento/Umidade/Temperatura em 26/08/2015")
+g_seq_zero1 <- g_seq_zero1 + scale_colour_manual("", 
+                                                 values = c("Temperatura"="blue", "Vento"="red", 
+                                                            "Umidade"="blue", "Sensação"="yellow"))
+g_seq_zero1
+
+seq_zero2 <- cepagri2[cepagri2$Horario2 >= "2017-05-13" & cepagri2$Horario2 < "2017-05-14",]
+g_seq_zero2 <- ggplot(seq_zero2, aes(x = seq_zero2$Horario2, y = value))
+g_seq_zero2 <- g_seq_zero2 + geom_line(aes(y = seq_zero2$Temperatura, colour="Temperatura"))
+g_seq_zero2 <- g_seq_zero2 + geom_line(aes(y = seq_zero2$Vento, colour="Vento"))
+g_seq_zero2 <- g_seq_zero2 + geom_line(aes(y = seq_zero2$Umidade, colour="Umidade"))
+g_seq_zero2 <- g_seq_zero2 + geom_line(aes(y = seq_zero2$Sensacao, colour="Sensação"))
+g_seq_zero2 <- g_seq_zero2 + xlab("Horário") + ylab("") +
+                             labs(title = "Variação Vento/Umidade/Temperatura em 13/05/2017")
+g_seq_zero2 <- g_seq_zero2 + scale_colour_manual("", 
+                                                 values = c("Temperatura"="blue", "Vento"="red", 
+                                                            "Umidade"="blue", "Sensação"="yellow"))
+g_seq_zero2
+
+
+
 ## Análise:
 ## 1 - 2 outliers são dados válidos
 ## 2 - Apesar do estrago, o vento da micro-explosão foi apenas 106o mais forte do período
-## 3 - 202 medições com Vento = 0, completar análise para ver se é problema nos dados
+## 3 - 202 medições com Vento = 0, 2 análises de vento = 0
 
 
 
