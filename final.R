@@ -43,8 +43,9 @@ cepagri2$Umidade <- as.numeric(as.character(cepagri2$Umidade))
 cepagri2$Sensacao <- as.numeric(as.character(cepagri2$Sensacao))
 
 # Cria novas colunas Ano e Mês
-cepagri2$Ano <- format(strptime(as.character(cepagri2$Horario), "%d/%m/%Y-%H:%M"), "%Y")
-cepagri2$Mes <- format(strptime(as.character(cepagri2$Horario), "%d/%m/%Y-%H:%M"), "%m")
+cepagri2$Ano <- as.numeric(format(strptime(as.character(cepagri2$Horario), "%d/%m/%Y-%H:%M"), "%Y"))
+cepagri2$Mes <- as.numeric(format(strptime(as.character(cepagri2$Horario), "%d/%m/%Y-%H:%M"), "%m"))
+cepagri2$Dia <- as.numeric(format(strptime(as.character(cepagri2$Horario), "%d/%m/%Y-%H:%M"), "%d"))
 
 library(ggplot2)
 
@@ -52,15 +53,12 @@ library(ggplot2)
 temp_medias_historicas <- c(24.7, 24.9, 24.7, 23.05, 20, 18.8, 18.5, 20.5, 21.8, 23.3, 23.8, 24.3)
 dados_medios_historicos <-  data.frame(Mês = c(1:12), Temperatura = medias_historicas)
 
-cepagri2$Ano <- format(strptime(as.character(cepagri2$Horario), "%d/%m/%Y-%H:%M"), "%Y")
-cepagri2$Mes <- format(strptime(as.character(cepagri2$Horario), "%d/%m/%Y-%H:%M"), "%m")
-
 ################################################################################################
 ### Comparação Temperaturas Médias Mensais com a Temperatura Média Mensal Histórica
 ################################################################################################
 
 #  Cria dataframe de temperaturas médias por mês durante os 3 anos
-dados_medios_agrupados <- aggregate(cepagri2[ , 2:5], list(cepagri2$Ano, cepagri2$Mes), mean)
+dados_medios_agrupados <- aggregate(cepagri2[ , 2:6], list(cepagri2$Ano, cepagri2$Mes), mean)
 colnames(dados_medios_agrupados) <- c("Ano", "Mês", "Temperatura", "Vento", "Umidade", "Sensação")
 # Remove colunas Umidade, Vento e Sensaçao do dataframe
 dados_medios_agrupados <- dados_medios_agrupados[, (colnames(dados_medios_agrupados) %in% c("Ano","Mês","Temperatura"))]
@@ -84,12 +82,51 @@ g <- g + ylab("Temperatura") + labs(colour = "Anos",
 g
 
 ################################################################################################
+### Análise temperatura mínima diária
+################################################################################################
+
+min_agregado <- aggregate(cepagri2[ , c(2,5)], list(cepagri2$Dia, cepagri2$Mes, cepagri2$Ano), min)
+colnames(min_agregado) <- c("dia", "mes", "ano", "Temperatura", "Sensação")
+
+## Temperaturas mínimas em geral são altas em Campinas. Apenas 9 vezes em 3 anos a temperatura ficou abaixo de 8
+## Nenhum dia teve minima inferior a 5
+sum(min_agregado$Temperatura < 5)
+sum(min_agregado$Temperatura >= 5 & min_agregado$Temperatura < 8)
+sum(min_agregado$Temperatura >= 8 & min_agregado$Temperatura < 10)
+sum(min_agregado$Temperatura >= 10 & min_agregado$Temperatura < 15)
+sum(min_agregado$Temperatura >= 15 & min_agregado$Temperatura < 20)
+sum(min_agregado$Temperatura >= 21)
+
+## Se olharmos a sensação térmica: Temos 46 casos de sensação térmica negativa.
+sum(min_agregado$Sensação < -5)
+sum(min_agregado$Sensação >= -5 & min_agregado$Sensação < 0)
+sum(min_agregado$Sensação >= 0 & min_agregado$Sensação < 5)
+sum(min_agregado$Sensação >= 5 & min_agregado$Sensação < 8)
+sum(min_agregado$Sensação >= 8 & min_agregado$Sensação < 10)
+sum(min_agregado$Sensação >= 10 & min_agregado$Sensação < 15)
+sum(min_agregado$Sensação >= 15 & min_agregado$Sensação < 20)
+sum(min_agregado$Sensação >= 20)
+
+summary(min_agregado$Sensação)
+summary(min_agregado$Temperatura)
+
+# Olhando os extremos:
+# Temp Min x Sensação Minima : 5.1 e -8.00 ... Uma diferença muito grande e curiosamente são dias em sequencia
+# 12/06/2016 - 6:40 - 16.2 - 98.4
+# 13/06/2016 - 7:00 - 66.8 - 57.4
+
+mean(cepagri2$Umidade[cepagri2$Horario2 >= "2016-06-12" & cepagri2$Horario2 < "2016-06-14"])
+mean(cepagri2$Vento[cepagri2$Horario2 >= "2016-06-12" & cepagri2$Horario2 < "2016-06-14"])
+# Umidade media de 60,43%
+# Vento medio de 40,13 km
+
+################################################################################################
 ### Análise Micro-Explosão em 05/06/2016
-### http://g1.globo.com/sp/campinas-regiao/noticia/2016/06/entenda-o-que-e-microexplosao-que-atingiu-campinas-veja-trajetoria-dela.html
+### http://g_2015.globo.com/sp/campinas-regiao/noticia/2016/06/entenda-o-que-e-microexplosao-que-atingiu-campinas-veja-trajetoria-dela.html
 ### Vento Máximo em Campinas
-### http://g1.globo.com/sp/campinas-regiao/noticia/2015/12/temporal-tem-ventos-de-ate-143-kmh-na-regiao-de-campinas-diz-cepagri.html
+### http://g_2015.globo.com/sp/campinas-regiao/noticia/2015/12/temporal-tem-ventos-de-ate-143-kmh-na-regiao-de-campinas-diz-cepagri.html
 ### Segundo vento máximo em Campinas
-### http://g1.globo.com/sp/campinas-regiao/noticia/2015/09/temporal-tem-ventos-ate-1425-kmh-na-regiao-de-campinas-diz-cepagri.html
+### http://g_2015.globo.com/sp/campinas-regiao/noticia/2015/09/temporal-tem-ventos-ate-1425-kmh-na-regiao-de-campinas-diz-cepagri.html
 ################################################################################################
 
 # Dataframe de Junho/2016
@@ -145,7 +182,7 @@ g_seq_zero1 <- g_seq_zero1 + geom_line(aes(y = seq_zero1$Sensacao, colour="Sensa
 g_seq_zero1 <- g_seq_zero1 + xlab("Horário") + ylab("") +
                              labs(title = "Variação Vento/Umidade/Temperatura em 26/08/2015")
 g_seq_zero1 <- g_seq_zero1 + scale_colour_manual("", 
-                                                 values = c("Temperatura"="blue", "Vento"="red", 
+                                                 values = c("Temperatura"="green", "Vento"="red", 
                                                             "Umidade"="blue", "Sensação"="yellow"))
 g_seq_zero1
 
@@ -158,7 +195,7 @@ g_seq_zero2 <- g_seq_zero2 + geom_line(aes(y = seq_zero2$Sensacao, colour="Sensa
 g_seq_zero2 <- g_seq_zero2 + xlab("Horário") + ylab("") +
                              labs(title = "Variação Vento/Umidade/Temperatura em 13/05/2017")
 g_seq_zero2 <- g_seq_zero2 + scale_colour_manual("", 
-                                                 values = c("Temperatura"="blue", "Vento"="red", 
+                                                 values = c("Temperatura"="green", "Vento"="red", 
                                                             "Umidade"="blue", "Sensação"="yellow"))
 g_seq_zero2
 
