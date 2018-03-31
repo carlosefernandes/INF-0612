@@ -51,28 +51,29 @@ library(ggplot2)
 
 # Fonte: https://www.cpa.unicamp.br/outras-informacoes/clima-de-campinas.html
 temp_medias_historicas <- c(24.7, 24.9, 24.7, 23.05, 20, 18.8, 18.5, 20.5, 21.8, 23.3, 23.8, 24.3)
-dados_medios_historicos <-  data.frame(Mês = c(1:12), Temperatura = medias_historicas)
+dados_medios_historicos <-  data.frame(Mês = c(1:12), Temperatura = temp_medias_historicas)
 
 ################################################################################################
 ### Comparação Temperaturas Médias Mensais com a Temperatura Média Mensal Histórica
 ################################################################################################
 
-#  Cria dataframe de temperaturas médias por mês durante os 3 anos
+#  TABELA 1: Cria dataframe de temperaturas médias por mês durante os 3 anos
 dados_medios_agrupados <- aggregate(cepagri2[ , 2:6], list(cepagri2$Ano, cepagri2$Mes), mean)
 colnames(dados_medios_agrupados) <- c("Ano", "Mês", "Temperatura", "Vento", "Umidade", "Sensação")
 # Remove colunas Umidade, Vento e Sensaçao do dataframe
 dados_medios_agrupados <- dados_medios_agrupados[, (colnames(dados_medios_agrupados) %in% c("Ano","Mês","Temperatura"))]
 
+# GRÁFICO 1
 # Plota dados médios em barras
-g <- ggplot(dados_medios_historicos, aes(x = dados_medios_historicos$Mês, 
+g <- ggplot(dados_medios_historicos, aes(x = as.factor(dados_medios_historicos$Mês), 
                                          y = dados_medios_historicos$Temperatura))
 g <- g + geom_bar(stat="identity")
 
 # Plota dados mensais em linhas (1 para cada ano)
 g <- g + geom_line(data = dados_medios_agrupados,aes(x = dados_medios_agrupados$Mês , 
                                                      y = dados_medios_agrupados$Temperatura,
-                                                     group = dados_medios_agrupados$Ano,
-                                                     colour = dados_medios_agrupados$Ano))
+                                                     group = as.factor(dados_medios_agrupados$Ano),
+                                                     colour = as.factor(dados_medios_agrupados$Ano)))
 g <- g + scale_x_discrete(name = "Mês", 
                             breaks = c(1:12)) 
 
@@ -82,12 +83,14 @@ g <- g + ylab("Temperatura") + labs(colour = "Anos",
 g
 
 ################################################################################################
-### Análise temperatura mínima diária
+### Análise de extremos de Temperatura Mínima e Sensação Térmica
 ################################################################################################
 
-min_agregado <- aggregate(cepagri2[ , c(2,5)], list(cepagri2$Dia, cepagri2$Mes, cepagri2$Ano), min)
-colnames(min_agregado) <- c("dia", "mes", "ano", "Temperatura", "Sensação")
+# TABELA 2: Tabela com temperatura mínima e sensação térmica mínima diária
+min_agregado <- aggregate(cepagri2[ , c(2:5)], list(cepagri2$Dia, cepagri2$Mes, cepagri2$Ano), min)
+colnames(min_agregado) <- c("dia", "mes", "ano", "Temperatura", "Vento", "Umidade","Sensação")
 
+# TABELA 3:
 ## Temperaturas mínimas em geral são altas em Campinas. Apenas 9 vezes em 3 anos a temperatura ficou abaixo de 8
 ## Nenhum dia teve minima inferior a 5
 sum(min_agregado$Temperatura < 5)
@@ -95,7 +98,7 @@ sum(min_agregado$Temperatura >= 5 & min_agregado$Temperatura < 8)
 sum(min_agregado$Temperatura >= 8 & min_agregado$Temperatura < 10)
 sum(min_agregado$Temperatura >= 10 & min_agregado$Temperatura < 15)
 sum(min_agregado$Temperatura >= 15 & min_agregado$Temperatura < 20)
-sum(min_agregado$Temperatura >= 21)
+sum(min_agregado$Temperatura >= 20)
 
 ## Se olharmos a sensação térmica: Temos 46 casos de sensação térmica negativa.
 sum(min_agregado$Sensação < -5)
@@ -110,6 +113,13 @@ sum(min_agregado$Sensação >= 20)
 summary(min_agregado$Sensação)
 summary(min_agregado$Temperatura)
 
+# Data da menor temperatura no período - 12/06/2016
+min_agregado[min_agregado$Temperatura == min(min_agregado$Temperatura),]
+
+# Data da menor sensaçao termica no período  - 13/06/2016
+min_agregado[min_agregado$Sensação == min(min_agregado$Sensação),]
+
+g_temp_min <- ggplot()
 # Olhando os extremos:
 # Temp Min x Sensação Minima : 5.1 e -8.00 ... Uma diferença muito grande e curiosamente são dias em sequencia
 # 12/06/2016 - 6:40 - 16.2 - 98.4
@@ -119,6 +129,15 @@ mean(cepagri2$Umidade[cepagri2$Horario2 >= "2016-06-12" & cepagri2$Horario2 < "2
 mean(cepagri2$Vento[cepagri2$Horario2 >= "2016-06-12" & cepagri2$Horario2 < "2016-06-14"])
 # Umidade media de 60,43%
 # Vento medio de 40,13 km
+
+# GRAFICO 2
+df_12_13 <- cepagri2[cepagri2$Horario2 >= "2016-06-12" & cepagri2$Horario2 < "2016-06-14",]
+g_min <- ggplot(df_12_13) + geom_line(aes(x = df_12_13$Horario2, y = df_12_13$Vento, colour="Vento"))
+g_min <- g_min + geom_line(aes(x = df_12_13$Horario2, y = df_12_13$Umidade, colour="Umidade"))
+g_min <- g_min + geom_line(aes(x = df_12_13$Horario2, y = df_12_13$Temperatura, colour="Temperatura"))
+g_min <- g_min + geom_line(aes(x = df_12_13$Horario2, y = df_12_13$Sensacao, colour="Sensação térmica"))
+g_min <- g_min  + xlab("Horário") + ylab("")
+g_min
 
 ################################################################################################
 ### Análise Micro-Explosão em 05/06/2016
